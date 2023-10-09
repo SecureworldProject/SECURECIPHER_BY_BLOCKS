@@ -234,7 +234,7 @@ int cipher(LPVOID out_buf, LPCVOID in_buf, DWORD size, size_t offset, struct Key
         message = lineal_transform(message);
         //Confusion
         byte resultado = confusion(message);
-        ((byte*)out_buf)[buf_pos] = (((byte*)in_buf)[buf_pos] ^ resultado) % 256;
+        ((byte*)out_buf)[buf_pos] = (((byte*)in_buf)[buf_pos] + resultado) % 256;
         last_byte = ((byte*)in_buf)[buf_pos];
     }
 
@@ -255,7 +255,7 @@ int decipher(LPVOID out_buf, LPCVOID in_buf, DWORD size, size_t offset, struct K
         message = lineal_transform(message);
         //Confusion
         byte resultado = confusion(message);
-        ((byte*)out_buf)[buf_pos] = (((byte*)in_buf)[buf_pos] ^ resultado) % 256;
+        ((byte*)out_buf)[buf_pos] = (((byte*)in_buf)[buf_pos] - resultado) % 256;
         last_byte = ((byte*)in_buf)[buf_pos];
     }
 
