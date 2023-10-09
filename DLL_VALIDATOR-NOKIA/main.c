@@ -428,7 +428,8 @@ void menuLoop() {
 						printf("Select an option:\n");
 						printf("  1) Functionality test \n");
 						printf("  2) Robustness test \n");
-						printf("  3) Block cipher test \n");
+						printf("  3) Block cipher test for video \n");
+						printf("  4) Block cipher test for text \n");
 						printf("  0) Back to main menu \n");
 						if (fgets(line, sizeof(line), stdin)) {
 							if (1 == sscanf(line, "%d", &choice)) {
@@ -496,26 +497,38 @@ void menuLoop() {
 										printf("Ciphered at %.3f bytes/second\n", speed);
 										break;
 									case 3:
-										printf("BLOCK CIPHER TEST\n");
+										printf("BLOCK CIPHER TEST VIDEO\n");
 										//test_block_cipher();
 										const char* directorio_trozos = "trozos";
 										FILE* archivo;
 										// Iterar sobre los archivos en el directorio
-										for (int i = 1; i <= 10; ++i) {
+										for (int i = 1; i <= 4; ++i) {
 											PRINT("Voy por el trozo %d\n", i);
 											// Construir la ruta del archivo
-											char nombre_archivo[20];  // Ajusta el tamaño según tus necesidades
-											snprintf(nombre_archivo, sizeof(nombre_archivo), "%s/trozo_%d.txt", directorio_trozos, i);
+											char nombre_archivo[50];  // Ajusta el tamaño según tus necesidades
+											snprintf(nombre_archivo, sizeof(nombre_archivo), "%s/trozo_%d.mp4", directorio_trozos, i);
 
 											// Abrir el archivo
 											PRINT("%s\n",nombre_archivo);
-											archivo = fopen(nombre_archivo, "r");
+											archivo = fopen(nombre_archivo, "rb");//Para video se lee en binario
 											if (archivo == NULL) {
 												perror("Error al abrir el archivo");
 											}
 											char* message;
 											message = inputFile(archivo, 1);
-											tam = strlen(message);
+											//tam = strlen(message); //Esto funciona solo para texto
+											if (fseek(archivo, 0, SEEK_END) != 0) {
+												perror("Error al buscar el final del archivo");
+												// Manejar el error según sea necesario
+											}
+
+											// Obtener la posición actual, que es el tamaño del archivo
+											tam = ftell(archivo);
+											if (tam == -1) {
+												perror("Error al obtener el tamaño del archivo");
+												// Manejar el error según sea necesario
+											}
+											PRINT("\tEl tam del buffer sera: %d\n",tam);
 											fclose(archivo);
 
 											// Realizar operaciones en el archivo (aquí puedes agregar tu lógica)
@@ -524,8 +537,8 @@ void menuLoop() {
 											DWORD buf_size = tam;
 											size_t offset = 0;
 
-											char nombre_archivo_cifrado[20];
-											snprintf(nombre_archivo_cifrado, sizeof(nombre_archivo_cifrado), "%s/trozo_%d_cifrado.txt", directorio_trozos, i);
+											char nombre_archivo_cifrado[50];
+											snprintf(nombre_archivo_cifrado, sizeof(nombre_archivo_cifrado), "%s/trozo_%d_cifrado", directorio_trozos, i);
 											FILE* f_ciphered = NULL;
 											byte* ciphered_buf = malloc(buf_size * sizeof(byte));
 
@@ -536,11 +549,12 @@ void menuLoop() {
 											if (result != 0) {
 												PRINT("WARNING: error ciphering '%ws' (error: %d)\n", dll, GetLastError()); ///*** Especificar error si es posible
 											}
+											fclose(f_ciphered);
 
 
 											//descifrar y guardar descifrado
-											char nombre_archivo_descifrado[20];
-											snprintf(nombre_archivo_descifrado, sizeof(nombre_archivo_descifrado), "%s/trozo_%d_descifrado.txt", directorio_trozos, i);
+											char nombre_archivo_descifrado[50];
+											snprintf(nombre_archivo_descifrado, sizeof(nombre_archivo_descifrado), "%s/trozo_%d_descifrado.mp4", directorio_trozos, i);
 											FILE* f_deciphered = NULL;
 											byte* deciphered_buf = malloc(buf_size * sizeof(byte));
 
@@ -552,9 +566,73 @@ void menuLoop() {
 											if (result != 0) {
 												PRINT("WARNING: error deciphering '%ws' (error: %d)\n", dll, GetLastError());
 											}
+											fclose(f_deciphered);
 
 										}
+										break;
+									case 4:
+										printf("BLOCK CIPHER TEST TXT\n");
+										//test_block_cipher();
+										const char* directorio_trozos_txt = "trozos_txt";
+										FILE* archivo_txt;
+										// Iterar sobre los archivos en el directorio
+										for (int i = 1; i <= 10; ++i) {
+											PRINT("Voy por el trozo %d\n", i);
+											// Construir la ruta del archivo
+											char nombre_archivo[50];  // Ajusta el tamaño según tus necesidades
+											snprintf(nombre_archivo, sizeof(nombre_archivo), "%s/trozo_%d.txt", directorio_trozos_txt, i);
 
+											// Abrir el archivo
+											PRINT("%s\n", nombre_archivo);
+											archivo_txt = fopen(nombre_archivo, "rb");//Para video se lee en binario
+											if (archivo_txt == NULL) {
+												perror("Error al abrir el archivo");
+											}
+											char* message;
+											message = inputFile(archivo_txt, 1);
+											tam = strlen(message); //Esto funciona solo para texto
+											
+											PRINT("\tEl tam del buffer sera: %d\n", tam);
+											fclose(archivo_txt);
+
+											// Realizar operaciones en el archivo (aquí puedes agregar tu lógica)
+											//cifrar y guardar cifrado
+											//Destination buffers
+											DWORD buf_size = tam;
+											size_t offset = 0;
+
+											char nombre_archivo_cifrado[50];
+											snprintf(nombre_archivo_cifrado, sizeof(nombre_archivo_cifrado), "%s/trozo_%d_cifrado", directorio_trozos_txt, i);
+											FILE* f_ciphered = NULL;
+											byte* ciphered_buf = malloc(buf_size * sizeof(byte));
+
+											//CIPHERING
+											result = cipher_func(ciphered_buf, message, buf_size, offset, composed_key);
+											f_ciphered = fopen(nombre_archivo_cifrado, "wb");
+											fwrite(ciphered_buf, 1, tam, f_ciphered);
+											if (result != 0) {
+												PRINT("WARNING: error ciphering '%ws' (error: %d)\n", dll, GetLastError()); ///*** Especificar error si es posible
+											}
+											fclose(f_ciphered);
+
+
+											//descifrar y guardar descifrado
+											char nombre_archivo_descifrado[50];
+											snprintf(nombre_archivo_descifrado, sizeof(nombre_archivo_descifrado), "%s/trozo_%d_descifrado.txt", directorio_trozos_txt, i);
+											FILE* f_deciphered = NULL;
+											byte* deciphered_buf = malloc(buf_size * sizeof(byte));
+
+											//DECIPHERING
+											//Deciphering original buffer (cipher -> decipher)
+											result = decipher_func(deciphered_buf, ciphered_buf, buf_size, offset, composed_key);
+											f_deciphered = fopen(nombre_archivo_descifrado, "wb");
+											fwrite(deciphered_buf, 1, tam, f_deciphered);
+											if (result != 0) {
+												PRINT("WARNING: error deciphering '%ws' (error: %d)\n", dll, GetLastError());
+											}
+											fclose(f_deciphered);
+
+										}
 										break;
 									case 0:
 										printf("Main menu... \n");
