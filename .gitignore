@@ -396,3 +396,7 @@ FodyWeavers.xsd
 
 # JetBrains Rider
 *.sln.iml
+
+ffmpeg.exe
+ffplay.exe
+ffprobe.exe
