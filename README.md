@@ -30,4 +30,48 @@ Hay dos proyectos en el repositorio:
 * Como se mantienen los métodos de difusion y confusion de Securecipher_N, el hash sigue trabajando con una entrada de 20 bytes, que antes se dividian entre la clave, el frn, y la posición, y ahora son para el byte anterior y la clave.
   * Se pueden usar claves mucho mas largas, de hasta 19bytes, si la clave es mas larga o mas corta que ese tamaño se adapta a 19 bytes, ya sea repitiendola, o haciendo xor con la porcion anterior de clave.
 
-##Modificacion y pruebas
+## Modificacion y pruebas
+El proyecto Securecipher_N genera una libreria dinámica llamada *Securecipher_N2.dll* para usarla, hay que cargar la libreria e invocar a las funciones de cifrado y descifrado (descritas en el apartado anterior).
+
+Para cargar la libreria y usarla se puede consultar el documento del proyecto [*A2.2.1.V1_5 Programación DLLs*](https://docs.google.com/document/d/1m_plJjkZNEg5odUYjWM3gvHNJZuQKP_EuHUCmcLkFhE/edit?usp=sharing)
+
+El proyecto CIPHER_BY_BLOCK_VALIDATOR contiene el codigo necesario para cargar una dll de cifrado y ejecutarla. Es un fork del DLL_Validator del proyecto, que solo sirve para cifradores en este escenario, es decir con la api nueva de cifrado.
+
+**Se recomienda compilar los proyectos en modo release/x64**
+### Cipher_by_block_validator
+Es el método mas sencillo para probar un cifrador de este tipo. Funciona mediante menus interactivos y permite validar los requisitos de cifrado, la velocidad del mismo, y hacer 
+
+### Requisitos
+La dll de cifrado tiene la siguiente api
+```python
+  cipher(LPVOID out_buf, LPCVOID in_buf, DWORD size, struct KeyData* key);
+  decipher(LPVOID out_buf, LPCVOID in_buf, DWORD size, struct KeyData* key);
+  ```
+Donde:
+* out_buf, in_buf: Son los bufferes de entrada y salida de cada funcion.
+* size: El tamaño del buffer
+* key: Una estructura que contiene información sobre la clave
+```python
+  struct KeyData {
+		byte* data;
+		int size;
+		time_t expires;
+	};
+  ```
+La funcion init se usa para obtener informacion del cifrador, por lo tanto su uso tambien depende del escenario
+```python
+  init(struct Cipher* cipher_data_param);
+  ```
+Donde la estructura Cipher es de la siguiente manera:
+```python
+struct Cipher {
+		char* id;
+		WCHAR* file_name;
+		HINSTANCE lib_handle;
+		int block_size;
+		char* custom;
+	};
+```
+
+## Escenario y propuesta original
+![boceto](boceto1.png)
