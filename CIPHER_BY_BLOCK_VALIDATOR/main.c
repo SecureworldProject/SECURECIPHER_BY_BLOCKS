@@ -140,7 +140,7 @@ test_func_type test_func;
 
 typedef int(__stdcall* cipher_init_func_type)(struct Cipher*);
 cipher_init_func_type cipher_init_func;
-typedef int(__stdcall* cipher_func_type)(LPVOID, LPCVOID, DWORD, size_t, struct KeyData*);
+typedef int(__stdcall* cipher_func_type)(LPVOID, LPCVOID, DWORD, struct KeyData*);
 cipher_func_type cipher_func;
 cipher_func_type decipher_func;
 
@@ -237,10 +237,12 @@ void menuLoop() {
 					//CIPHERING
 
 					//Ciphering smaller buffer (original -> cipher)
-					result = cipher_func(ciphered_buf_test, message_test, buf_size_test, offset, composed_key);
+					//result = cipher_func(ciphered_buf_test, message_test, buf_size_test, offset, composed_key);
+					result = cipher_func(ciphered_buf_test, message_test, buf_size_test, composed_key);
 					//Ciphering original buffer (original -> cipher)
 					long long int begin = GetTickCount64();
-					result = cipher_func(ciphered_buf, message, buf_size, offset, composed_key);
+					//result = cipher_func(ciphered_buf, message, buf_size, offset, composed_key);
+					result = cipher_func(ciphered_buf, message, buf_size, composed_key);
 					long long int end = GetTickCount64();
 					f_ciphered = fopen(file_ciphered, "wb");
 					fwrite(ciphered_buf, 1, tam, f_ciphered);
@@ -252,9 +254,11 @@ void menuLoop() {
 					decipher_func = (cipher_func_type)GetProcAddress(hLib, "decipher");
 					if (decipher_func != NULL) {
 						//Deciphering smaller buffer (original -> decipher)
-						result = decipher_func(deciphered_buf_test, message_test, buf_size_test, offset, composed_key);
+						//result = decipher_func(deciphered_buf_test, message_test, buf_size_test, offset, composed_key);
+						result = decipher_func(deciphered_buf_test, message_test, buf_size_test, composed_key);
 						//Deciphering original buffer (cipher -> decipher)
-						result = decipher_func(deciphered_buf, ciphered_buf, buf_size, offset, composed_key);
+						//result = decipher_func(deciphered_buf, ciphered_buf, buf_size, offset, composed_key);
+						result = decipher_func(deciphered_buf, ciphered_buf, buf_size, composed_key);
 						f_deciphered = fopen(file_deciphered, "wb");
 						fwrite(deciphered_buf, 1, tam, f_deciphered);
 						if (result != 0) {
@@ -391,7 +395,8 @@ void menuLoop() {
 											byte* ciphered_buf = malloc(buf_size * sizeof(byte));
 
 											//CIPHERING
-											result = cipher_func(ciphered_buf, message, buf_size, offset, composed_key);
+											//result = cipher_func(ciphered_buf, message, buf_size, offset, composed_key);
+											result = cipher_func(ciphered_buf, message, buf_size, composed_key);
 											f_ciphered = fopen(nombre_archivo_cifrado, "wb");
 											fwrite(ciphered_buf, 1, tam, f_ciphered);
 											if (result != 0) {
@@ -408,7 +413,8 @@ void menuLoop() {
 
 											//DECIPHERING
 											//Deciphering original buffer (cipher -> decipher)
-											result = decipher_func(deciphered_buf, ciphered_buf, buf_size, offset, composed_key);
+											//result = decipher_func(deciphered_buf, ciphered_buf, buf_size, offset, composed_key);
+											result = decipher_func(deciphered_buf, ciphered_buf, buf_size, composed_key);
 											f_deciphered = fopen(nombre_archivo_descifrado, "wb");
 											fwrite(deciphered_buf, 1, tam, f_deciphered);
 											if (result != 0) {
@@ -455,7 +461,8 @@ void menuLoop() {
 											byte* ciphered_buf = malloc(buf_size * sizeof(byte));
 
 											//CIPHERING
-											result = cipher_func(ciphered_buf, message, buf_size, offset, composed_key);
+											//result = cipher_func(ciphered_buf, message, buf_size, offset, composed_key);
+											result = cipher_func(ciphered_buf, message, buf_size, composed_key);
 											f_ciphered = fopen(nombre_archivo_cifrado, "wb");
 											fwrite(ciphered_buf, 1, tam, f_ciphered);
 											if (result != 0) {
@@ -472,7 +479,8 @@ void menuLoop() {
 
 											//DECIPHERING
 											//Deciphering original buffer (cipher -> decipher)
-											result = decipher_func(deciphered_buf, ciphered_buf, buf_size, offset, composed_key);
+											//result = decipher_func(deciphered_buf, ciphered_buf, buf_size, offset, composed_key);
+											result = decipher_func(deciphered_buf, ciphered_buf, buf_size, composed_key);
 											f_deciphered = fopen(nombre_archivo_descifrado, "wb");
 											fwrite(deciphered_buf, 1, tam, f_deciphered);
 											if (result != 0) {

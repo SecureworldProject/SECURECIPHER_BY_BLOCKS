@@ -9,8 +9,8 @@ struct Cipher* cipher_data;
 
 //Function prototypes
 extern "C" _declspec(dllexport) int init(struct Cipher* cipher_data_param);
-extern "C" _declspec(dllexport) int cipher(LPVOID out_buf, LPCVOID in_buf, DWORD size, size_t offset, struct KeyData* key);
-extern "C" _declspec(dllexport) int decipher(LPVOID out_buf, LPCVOID in_buf, DWORD size, size_t offset, struct KeyData* key);
+extern "C" _declspec(dllexport) int cipher(LPVOID out_buf, LPCVOID in_buf, DWORD size, struct KeyData* key);
+extern "C" _declspec(dllexport) int decipher(LPVOID out_buf, LPCVOID in_buf, DWORD size, struct KeyData* key);
 
 byte* get_message(byte last_byte, struct KeyData* key) {
     byte message[20] = { 0 };
@@ -221,7 +221,8 @@ int init(struct Cipher* cipher_data_param) {
     return 0;
 }
 
-int cipher(LPVOID out_buf, LPCVOID in_buf, DWORD size, size_t offset, struct KeyData* key) { //offset es la posicion en el fichero, en esta version no es necesario
+//int cipher(LPVOID out_buf, LPCVOID in_buf, DWORD size, size_t offset, struct KeyData* key) { //offset es la posicion en el fichero, en esta version no es necesario
+int cipher(LPVOID out_buf, LPCVOID in_buf, DWORD size, struct KeyData* key) { //offset es la posicion en el fichero, en esta version no es necesario
     printf("Ciphering (%ws)\n", cipher_data->file_name);
 
     static byte* message = (byte*)malloc(20 * sizeof(byte));
@@ -244,7 +245,8 @@ int cipher(LPVOID out_buf, LPCVOID in_buf, DWORD size, size_t offset, struct Key
     return 0;
 }
 
-int decipher(LPVOID out_buf, LPCVOID in_buf, DWORD size, size_t offset, struct KeyData* key) {
+//int decipher(LPVOID out_buf, LPCVOID in_buf, DWORD size, size_t offset, struct KeyData* key) {
+int decipher(LPVOID out_buf, LPCVOID in_buf, DWORD size, struct KeyData* key) {
     printf("Deciphering (%ws)\n", cipher_data->file_name);
     static byte* message = (byte*)malloc(20 * sizeof(byte));
     size_t buf_pos = 0; //posicion en el bufer, solo valida para escribir en el bufer, para cifrar se usa la posicion real en el fichero
