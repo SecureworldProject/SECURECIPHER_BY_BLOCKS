@@ -22,7 +22,7 @@ Hay dos proyectos en el repositorio:
   #Si antes era un cifrador dependiente de la posicion de esta forma
   byte_cifrado = byte_claro + hash(posicion,clave,frn)
   byte_descifrado = byte_claro - hash(posicion,clave,frn)
-  #Ahora es un cifrador de flujo, que produce un keystream teniendo en cuenta la informacion anterior y se aplica a los bytes en claro/cifrados
+  #Ahora se produce un keystream teniendo en cuenta la informacion anterior y se aplica a los bytes en claro/cifrados
   byte_keystream = hash(byte_anterior,clave)
   byte_cifrado = byte ^ byte_keystream
   ```
