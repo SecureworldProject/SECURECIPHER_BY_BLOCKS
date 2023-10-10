@@ -39,7 +39,7 @@ El proyecto CIPHER_BY_BLOCK_VALIDATOR contiene el codigo necesario para cargar u
 
 **Se recomienda compilar los proyectos en modo release/x64**
 ### Cipher_by_block_validator
-![menu](MenuValidator.PNG)
+
 
 Es el método mas sencillo para probar un cifrador de este tipo. Funciona mediante menus interactivos y permite validar los requisitos de cifrado, la velocidad del mismo, y hacer una prueba con trozos de un fichero de distintos tamaños.
 
