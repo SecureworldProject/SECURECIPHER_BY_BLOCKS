@@ -40,13 +40,14 @@ El proyecto CIPHER_BY_BLOCK_VALIDATOR contiene el codigo necesario para cargar u
 **Se recomienda compilar los proyectos en modo release/x64**
 ### Cipher_by_block_validator
 ![menu](MenuValidator.PNG)
+
 Es el método mas sencillo para probar un cifrador de este tipo. Funciona mediante menus interactivos y permite validar los requisitos de cifrado, la velocidad del mismo, y hacer una prueba con trozos de un fichero de distintos tamaños.
 
 Una vez indicas el nombre de la dll de cifrado se realizan unas pruebas en segundo plano y aparece el menu de validacion del cifrador con las siguientes opciones:
 1. Functionality test: Para comprobar los requisitos funcionales del cifrado
 2. Speed test: Para comprobar la velocidad del cifrado
-3. Block ciper test for video: Se prueba el cifrado con trozos de un fichero de video de distintos tamaños.
-4. Block cipher test for text: Como la anterior pero con un fichero de texto.
+3. Block ciper test for video: Se prueba el cifrado con trozos de un fichero de video de distintos tamaños. Los videos que se van a cifrar estan en la carpeta *trozos* del directorio de trabajo (x64/Realease/trozos). Los videos cifrados y descifrados se guardan en el mismo lugar 
+4. Block cipher test for text: Como la anterior pero con un fichero de texto.(x64/Realease/trozos_txt)
 
 ### Requisitos
 La dll de cifrado tiene la siguiente api
@@ -60,10 +61,10 @@ Donde:
 * key: Una estructura que contiene información sobre la clave
 ```python
   struct KeyData {
-		byte* data;
-		int size;
-		time_t expires;
-	};
+	byte* data;
+	int size;
+	time_t expires;
+};
   ```
 La funcion init se usa para obtener informacion del cifrador, por lo tanto su uso tambien depende del escenario
 ```python
@@ -72,12 +73,48 @@ La funcion init se usa para obtener informacion del cifrador, por lo tanto su us
 Donde la estructura Cipher es de la siguiente manera:
 ```python
 struct Cipher {
-		char* id;
-		WCHAR* file_name;
-		HINSTANCE lib_handle;
-		int block_size;
-		char* custom;
-	};
+	char* id;
+	WCHAR* file_name;
+	HINSTANCE lib_handle;
+	int block_size;
+	char* custom;
+};
+```
+
+Para llamar a las funciones de la libreria es necesario:
+```python
+#Funciones exportadas de la libreria
+typedef int(__stdcall* cipher_init_func_type)(struct Cipher*);
+cipher_init_func_type cipher_init_func;
+typedef int(__stdcall* cipher_func_type)(LPVOID, LPCVOID, DWORD, struct KeyData*);
+cipher_func_type cipher_func;
+cipher_func_type decipher_func;
+
+#Structs necesarios
+struct Cipher cipher;
+struct KeyData* composed_key;
+
+#Carga de la libreria
+hLib = LoadLibraryW(dll);
+#Relleno de ejemplo de los structs
+cipher.lib_handle = hLib;
+cipher.file_name = dll;
+cipher.block_size = 8;
+cipher.id = dll;
+
+composed_key = malloc(1 * sizeof(struct KeyData));
+composed_key->size = 5;
+composed_key->data = malloc(composed_key->size, sizeof(byte));
+composed_key->data = (byte*)"12345";
+composed_key->expires = 0;
+
+#Punto de entrada a las funciones
+cipher_func = (cipher_func_type)GetProcAddress(hLib, "cipher");
+decipher_func = (cipher_func_type)GetProcAddress(hLib, "decipher");
+#Uso de las funciones
+result = cipher_func(ciphered_buf, message, buf_size, composed_key);
+result = decipher_func(deciphered_buf, ciphered_buf, buf_size, composed_key);
+
 ```
 
 ## Escenario y propuesta original
