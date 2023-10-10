@@ -39,7 +39,14 @@ El proyecto CIPHER_BY_BLOCK_VALIDATOR contiene el codigo necesario para cargar u
 
 **Se recomienda compilar los proyectos en modo release/x64**
 ### Cipher_by_block_validator
-Es el método mas sencillo para probar un cifrador de este tipo. Funciona mediante menus interactivos y permite validar los requisitos de cifrado, la velocidad del mismo, y hacer 
+![menu](MenuValidator.png)
+Es el método mas sencillo para probar un cifrador de este tipo. Funciona mediante menus interactivos y permite validar los requisitos de cifrado, la velocidad del mismo, y hacer una prueba con trozos de un fichero de distintos tamaños.
+
+Una vez indicas el nombre de la dll de cifrado se realizan unas pruebas en segundo plano y aparece el menu de validacion del cifrador con las siguientes opciones:
+1. Functionality test: Para comprobar los requisitos funcionales del cifrado
+2. Speed test: Para comprobar la velocidad del cifrado
+3. Block ciper test for video: Se prueba el cifrado con trozos de un fichero de video de distintos tamaños.
+4. Block cipher test for text: Como la anterior pero con un fichero de texto.
 
 ### Requisitos
 La dll de cifrado tiene la siguiente api
