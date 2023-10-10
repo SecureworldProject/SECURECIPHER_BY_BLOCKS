@@ -279,7 +279,7 @@ void menuLoop() {
 
 						printf("Select an option:\n");
 						printf("  1) Functionality test \n");
-						printf("  2) Robustness test \n");
+						printf("  2) Speed test \n");
 						printf("  3) Block cipher test for video \n");
 						printf("  4) Block cipher test for text \n");
 						printf("  0) Back to main menu \n");
@@ -337,7 +337,7 @@ void menuLoop() {
 										} while (!ciph_menu);
 										break;
 									case 2:
-										printf("ROBUSTNESS TEST \n");
+										printf("SPEED TEST \n");
 										double elapsed = (end - begin) * 1e-3;
 										printf("Time to complete cipher: %.3f seconds\n", elapsed);
 										HANDLE handle_aux = CreateFileA(file_ciphered, GENERIC_READ, FILE_SHARE_WRITE, NULL, OPEN_EXISTING, 0, NULL);
