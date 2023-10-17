@@ -4,6 +4,30 @@ Adaptación de securecipher para que trabaje con bloques de datos en un escenari
 Hay dos proyectos en el repositorio:
 1. Securecipher_N: Adaptacion de la libreria dinámica original para que trabaje con bloques
 2. Cipher_by_block_validator: Para validar este nuevo cifrador (similar al dll validator del proyecto, pero con dos opciones para trabajar con bloques de distinto tamaño)
+3. securecipher: Programa para uso regular, permite cifrar y descifrar ficheros. **Este es el que se usa en la colaboracion**
+
+## Escenario y propuesta cifrador
+![boceto](boceto2.png)
+
+## Programa securecipher
+Uso:
+
+securecipher.exe <-c|-d> <fichero_entrada.extension> <-k> <fichero_clave>
+
+Donde:
+* <-c|-d>: indica el modo de operacion, cifrar o descifrar
+* <fichero_entrada.extension>: El fichero que se quiere cifrar o descifrar, es importante incluir la extension del mismo
+* <-k>: indica que el siguiente fichero es el fichero de clave
+* <fichero_clave>: Un fichero que contiene la clave
+  
+Salida:
+* Si el modo es cifrar: fichero_entrada_c.extension (el fichero cifrado)
+* Si el modo es descifrar: fichero_entrada_d.extension (el fichero descifrado)
+
+Donde poner los ficheros:
+* Los ficheros que uses deben estar en la misma ubicacion que el ejecutable, por defecto en *securecipher/x64/Release*
+* Hay 3 ficheros para probar, uno de calve, otro de video y otro de texto.
+* Además hay una carpeta que se llama *Ficheros para probar* que contiene mas ficheros de clave, de video y de texto
 
 ## Cambios en el cifrado
 * Es un cifrador de flujo, que trata cada bloque de forma independiente y de manera conjunta, ya que el escenario de uso es distinto que el de Securemirror (trabajar con un sistema de ficheros en tiempo real)
@@ -116,6 +140,3 @@ result = cipher_func(ciphered_buf, message, buf_size, composed_key);
 result = decipher_func(deciphered_buf, ciphered_buf, buf_size, composed_key);
 
 ```
-
-## Escenario y propuesta original
-![boceto](boceto1.png)
