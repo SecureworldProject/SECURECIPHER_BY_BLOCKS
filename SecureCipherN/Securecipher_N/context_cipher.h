@@ -31,7 +31,7 @@ extern "C" {
 	struct KeyData {
 		byte* data;
 		int size;
-		time_t expires;
+		//time_t expires;
 	};
 
 #ifdef __cplusplus
