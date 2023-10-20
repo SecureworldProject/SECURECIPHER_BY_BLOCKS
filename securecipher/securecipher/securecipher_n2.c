@@ -203,47 +203,88 @@ byte confusion(byte* message) {
 }
 
 //int cipher(LPVOID out_buf, LPCVOID in_buf, DWORD size, size_t offset, struct KeyData* key) { //offset es la posicion en el fichero, en esta version no es necesario
-int cipher(LPVOID out_buf, LPCVOID in_buf, DWORD size, struct KeyData* key) { //offset es la posicion en el fichero, en esta version no es necesario
-    //printf("Ciphering (%ws)\n", cipher_data->file_name);
-
-    //static byte* message = (byte*)malloc(20 * sizeof(byte));
+int cipher(LPVOID out_buf, LPCVOID in_buf, DWORD size, struct KeyData* key, int nal_mode) { //offset es la posicion en el fichero, en esta version no es necesario
+    
     byte* message = (byte*)malloc(20 * sizeof(byte));
     size_t buf_pos = 0; //posicion en el bufer de cifrado
     byte last_byte = 0xFF;
+    //byte pattern[5] = { 0x01, 0x45, 0xFC, 0xC7, 0xA2 }; //solo si uso memcmp
+    int pos_nal;
+    if (nal_mode == 1) { pos_nal = 45; }
     for (buf_pos; buf_pos < size; buf_pos++) {
-        //message = get_message(buf_pos, key);
-        message = get_message(last_byte, key);
+        if (nal_mode == 1) {
+            /*if (buf_pos >= 4) {  // Se puede cambiar para mirar cada n bytes
+                if (((byte*)in_buf)[buf_pos - 4] == 0x01 &&
+                    ((byte*)in_buf)[buf_pos - 3] == 0x45 &&
+                    ((byte*)in_buf)[buf_pos - 2] == 0xFC &&
+                    ((byte*)in_buf)[buf_pos - 1] == 0xC7 &&
+                    ((byte*)in_buf)[buf_pos] == 0xA2) {
+                    printf("Encontrada la cadena de bytes en la posición %zu\n", buf_pos - 4);
+                }
+            }*/
+            if (buf_pos == pos_nal) {
+                //out_buf = (byte*)realloc(out_buf, (size + 5) * sizeof(byte));
+                ((byte*)in_buf)[buf_pos] = 0x01;
+                ((byte*)in_buf)[buf_pos + 1] = 0x45;
+                ((byte*)in_buf)[buf_pos + 2] = 0xFC;
+                ((byte*)in_buf)[buf_pos + 3] = 0xC7;
+                ((byte*)in_buf)[buf_pos + 4] = 0xA2;
+                //buf_pos = buf_pos + 4;
+                printf("Secuencia introducida\n");
+            }
+        }
+        //message = get_message(last_byte, key);
+        memcpy(message, get_message(last_byte, key), 20);
         //Hago la transformacion lineal y actualizo el message
         message = lineal_transform(message);
         //Confusion
         byte resultado = confusion(message);
         ((byte*)out_buf)[buf_pos] = (((byte*)in_buf)[buf_pos] ^ resultado) % 256;
         last_byte = ((byte*)in_buf)[buf_pos];
-        //last_byte = 0xFF;
     }
-
     //printf("Buffer ciphered\n");
     free(message);
+    
     return 0;
 }
 
 //int decipher(LPVOID out_buf, LPCVOID in_buf, DWORD size, size_t offset, struct KeyData* key) {
-int decipher(LPVOID out_buf, LPCVOID in_buf, DWORD size, struct KeyData* key) {
-    //printf("Deciphering (%ws)\n", cipher_data->file_name);
-    //static byte* message = (byte*)malloc(20 * sizeof(byte));
+int decipher(LPVOID out_buf, LPCVOID in_buf, DWORD size, struct KeyData* key, int nal_mode) {
+
     byte* message = (byte*)malloc(20 * sizeof(byte));
     size_t buf_pos = 0; //posicion en el bufer, solo valida para escribir en el bufer, para cifrar se usa la posicion real en el fichero
     byte last_byte = 0xFF;
+    byte pattern[5] = { 0x01, 0x45, 0xFC, 0xC7, 0xA2 };
     for (buf_pos; buf_pos < size; buf_pos++) {
-        //message = get_message(buf_pos, key);
-        message = get_message(last_byte, key);
+        //message = get_message(last_byte, key);
+        memcpy(message, get_message(last_byte, key), 20);
         //Hago la transformacion lineal y actualizo el message
         message = lineal_transform(message);
         //Confusion
         byte resultado = confusion(message);
         ((byte*)out_buf)[buf_pos] = (((byte*)in_buf)[buf_pos] ^ resultado) % 256;
         last_byte = ((byte*)out_buf)[buf_pos];
-        //last_byte = 0xFF;
+        //Añado el calculo del nal
+        if (nal_mode == 1) {
+            if (buf_pos >= 4) {  // Asegúrate de que haya al menos 5 bytes en el buffer
+                if (((byte*)in_buf)[buf_pos - 4] == 0x01 &&
+                    ((byte*)in_buf)[buf_pos - 3] == 0x45 &&
+                    ((byte*)in_buf)[buf_pos - 2] == 0xFC &&
+                    ((byte*)in_buf)[buf_pos - 1] == 0xC7 &&
+                    ((byte*)in_buf)[buf_pos] == 0xA2) {
+                    printf("A.Encontrada la cadena de bytes en la posición %zu\n", buf_pos - 4);
+                }
+            }
+            if (buf_pos >= 4) {  // Asegúrate de que haya al menos 5 bytes en el buffer
+                if (((byte*)out_buf)[buf_pos - 4] == 0x01 &&
+                    ((byte*)out_buf)[buf_pos - 3] == 0x45 &&
+                    ((byte*)out_buf)[buf_pos - 2] == 0xFC &&
+                    ((byte*)out_buf)[buf_pos - 1] == 0xC7 &&
+                    ((byte*)out_buf)[buf_pos] == 0xA2) {
+                    printf("B.Encontrada la cadena de bytes en la posición %zu\n", buf_pos - 4);
+                }
+            }
+        }
     }
 
     //printf("Buffer deciphered\n");

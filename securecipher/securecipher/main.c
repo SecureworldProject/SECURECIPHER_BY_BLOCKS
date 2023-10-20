@@ -5,6 +5,10 @@
 #include <stdint.h>
 #include "securecipher_n2.h"
 
+typedef enum {
+Nada = 0,
+Clave = 1} Tipo_Nal;
+
 //Funciones auxiliares
 DWORD get_file_size(FILE* file){
     DWORD pos_actual = ftell(file);
@@ -41,14 +45,17 @@ char* inputFile(FILE* fp, size_t size) {
 
 //Main
 int main(int argc, char* argv[]) {
-    if (argc != 5) {
-        printf("Uso: %s -c(ifrar)|-d(escifrar) <nombre_archivo.ext> -k <keyfile>\n", argv[0]);
+    int modo_nal = 0;//No hay nal por defecto
+    if (argc < 5 || argc > 7) {
+        printf("Uso: %s -c(ifrar)|-d(escifrar) <nombre_archivo.ext> -k <keyfile> [-N <newkeyfile>]\n", argv[0]);
         return 1;
     }
 
-    char* modo = argv[1]; //Modo: Cifrado o descifrado
+    //Modo: Cifrado o descifrado
+    char* modo = argv[1]; 
 
-    FILE* fichero_entrada = fopen(argv[2], "rb"); //Fichero para cifrar
+    //Fichero que se va a cifrar/descifrar
+    FILE* fichero_entrada = fopen(argv[2], "rb");
     if (fichero_entrada == NULL) {
         printf("No se puede abrir el archivo: %s\n", argv[2]);
         return 1;
@@ -58,7 +65,6 @@ int main(int argc, char* argv[]) {
     char* buffer_entrada;// = malloc(tam_buffer_entrada);
     buffer_entrada = inputFile(fichero_entrada, 1);
     //Separo nombre y extension, y guardo ambos para luego escribir los ficheros de salida
-    //TODO: Comprobar que hay punto y nombre, comprobar el nombre, etc...
     int tam_filename = strlen(argv[2]);
     const char* punto = strrchr(argv[2], '.'); 
     char* extension[255];//Aunque nunca es tan larga, este es el tamaño maximo de una extension en windows
@@ -69,13 +75,11 @@ int main(int argc, char* argv[]) {
     tam_filename = final_filename;
     strncpy(filename, argv[2], final_filename);
     filename[final_filename] = '\0';
-    /*printf("La extension %s tiene un tamaño de %d\n",extension,strlen(extension));
-    printf("El nombre %s tiene un tamaño de %d\n",filename,strlen(filename));
-    printf("Final filename es %d\n", final_filename);*/
     fclose(fichero_entrada);
 
+    //Preparo la clave
     struct KeyData* key;
-    FILE* fichero_clave = fopen(argv[4], "rb"); //Fichero que contiene la clave
+    FILE* fichero_clave = fopen(argv[4], "rb"); 
     if (fichero_clave == NULL) {
         printf("No se puede abrir el archivo: %s\n", argv[4]);
         return 1;
@@ -89,6 +93,31 @@ int main(int argc, char* argv[]) {
     key->data = datos_clave;
     fclose(fichero_clave);
 
+    //Trato el NAL
+    if ((argc == 7) && (strcmp(argv[5], "-N")==0)) {
+        //Guardar la segunda clave y llamar al cifrado con el modo Nal, variable Nal = 01 por ejemplo
+        modo_nal = 1;//Nal de cambio de clave
+        struct KeyData* newkey;
+        FILE* fichero_nueva_clave = fopen(argv[6], "rb"); //Fichero que contiene la nueva clave
+        if (fichero_nueva_clave == NULL) {
+            printf("No se puede abrir el archivo: %s\n", argv[6]);
+            return 1;
+        }
+        DWORD tam_nueva_clave = get_file_size(fichero_clave);
+        byte* datos_nueva_clave = malloc(tam_nueva_clave);
+        datos_nueva_clave = inputFile(fichero_nueva_clave, 1);
+        newkey = malloc(sizeof(struct KeyData));
+        newkey->size = tam_nueva_clave;
+        newkey->data = malloc(tam_nueva_clave);
+        newkey->data = datos_nueva_clave;
+        fclose(fichero_nueva_clave);
+        key->next_key = newkey;
+    }
+    else if ((argc == 7)){
+        printf("Modo NAL no reconocido %s\n", argv[5]);
+        return 1;
+    }
+
     //Cifrar/Descifrar
     int result;
     if (strcmp(modo, "-c") == 0) {
@@ -97,11 +126,12 @@ int main(int argc, char* argv[]) {
         snprintf(nombre_file_salida,tam_filename+tam_extension+4,"%s_c.%s",filename,extension);
         byte* buffer_salida = malloc(tam_buffer_entrada);
         //Cifrar
-        result = cipher(buffer_salida, buffer_entrada, tam_buffer_entrada, key);
+        result = cipher(buffer_salida, buffer_entrada, tam_buffer_entrada, key, modo_nal);
         if (result != 0) {
             printf("Error de cifrado (error: %d)\n",GetLastError());
         }
         //Escribir fichero salida
+        
         FILE* fichero_salida = fopen(nombre_file_salida, "wb");
         fwrite(buffer_salida, 1, tam_buffer_entrada, fichero_salida);
         fclose(fichero_salida);
@@ -113,7 +143,7 @@ int main(int argc, char* argv[]) {
         snprintf(nombre_file_salida, tam_filename + tam_extension + 4, "%s_d.%s", filename, extension);
         byte* buffer_salida = malloc(tam_buffer_entrada);
         //Cifrar
-        result = decipher(buffer_salida, buffer_entrada, tam_buffer_entrada, key);
+        result = decipher(buffer_salida, buffer_entrada, tam_buffer_entrada, key, modo_nal);
         if (result != 0) {
             printf("Error de descifrado (error: %d)\n", GetLastError());
         }
