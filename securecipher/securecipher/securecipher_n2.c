@@ -210,9 +210,9 @@ int cipher(LPVOID out_buf, LPCVOID in_buf, DWORD size, struct KeyData* key, int 
     byte last_byte = 0xFF;
     //byte pattern[5] = { 0x01, 0x45, 0xFC, 0xC7, 0xA2 }; //solo si uso memcmp
     int pos_nal;
-    if (nal_mode == 1) { pos_nal = 45; }
+    //if (nal_mode == 1) { pos_nal = 45; }
     for (buf_pos; buf_pos < size; buf_pos++) {
-        if (nal_mode == 1) {
+        /*if (nal_mode == 1) {
             /*if (buf_pos >= 4) {  // Se puede cambiar para mirar cada n bytes
                 if (((byte*)in_buf)[buf_pos - 4] == 0x01 &&
                     ((byte*)in_buf)[buf_pos - 3] == 0x45 &&
@@ -221,7 +221,7 @@ int cipher(LPVOID out_buf, LPCVOID in_buf, DWORD size, struct KeyData* key, int 
                     ((byte*)in_buf)[buf_pos] == 0xA2) {
                     printf("Encontrada la cadena de bytes en la posición %zu\n", buf_pos - 4);
                 }
-            }*/
+            }
             if (buf_pos == pos_nal) {
                 //out_buf = (byte*)realloc(out_buf, (size + 5) * sizeof(byte));
                 ((byte*)in_buf)[buf_pos] = 0x01;
@@ -232,7 +232,7 @@ int cipher(LPVOID out_buf, LPCVOID in_buf, DWORD size, struct KeyData* key, int 
                 //buf_pos = buf_pos + 4;
                 printf("Secuencia introducida\n");
             }
-        }
+        }*/
         //message = get_message(last_byte, key);
         memcpy(message, get_message(last_byte, key), 20);
         //Hago la transformacion lineal y actualizo el message
@@ -265,7 +265,7 @@ int decipher(LPVOID out_buf, LPCVOID in_buf, DWORD size, struct KeyData* key, in
         ((byte*)out_buf)[buf_pos] = (((byte*)in_buf)[buf_pos] ^ resultado) % 256;
         last_byte = ((byte*)out_buf)[buf_pos];
         //Añado el calculo del nal
-        if (nal_mode == 1) {
+        /*if (nal_mode == 1) {
             if (buf_pos >= 4) {  // Asegúrate de que haya al menos 5 bytes en el buffer
                 if (((byte*)in_buf)[buf_pos - 4] == 0x01 &&
                     ((byte*)in_buf)[buf_pos - 3] == 0x45 &&
@@ -284,7 +284,7 @@ int decipher(LPVOID out_buf, LPCVOID in_buf, DWORD size, struct KeyData* key, in
                     printf("B.Encontrada la cadena de bytes en la posición %zu\n", buf_pos - 4);
                 }
             }
-        }
+        }*/
     }
 
     //printf("Buffer deciphered\n");
