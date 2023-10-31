@@ -202,93 +202,159 @@ byte confusion(byte* message) {
     return resultado;
 }
 
-//int cipher(LPVOID out_buf, LPCVOID in_buf, DWORD size, size_t offset, struct KeyData* key) { //offset es la posicion en el fichero, en esta version no es necesario
-int cipher(LPVOID out_buf, LPCVOID in_buf, DWORD size, struct KeyData* key, int nal_mode) { //offset es la posicion en el fichero, en esta version no es necesario
-    
+int cipher(byte** out_buf, byte* in_buf, DWORD size, struct KeyData* key) {    
+
+    //Variables de cifrado
     byte* message = (byte*)malloc(20 * sizeof(byte));
     size_t buf_pos = 0; //posicion en el bufer de cifrado
+    size_t out_pos = 0;
+    size_t in_pos = 0;
     byte last_byte = 0xFF;
-    //byte pattern[5] = { 0x01, 0x45, 0xFC, 0xC7, 0xA2 }; //solo si uso memcmp
-    int pos_nal;
-    //if (nal_mode == 1) { pos_nal = 45; }
+    byte nal_buffer[5] = { 0x01, 0x45, 0xFC, 0xC7, 0xA2 }; //solo si uso memcmp o memcpy
+    int pos_nal = size/2;
+    int tam_nal = 0;
+    byte* nal = NULL;
+    int nal_mode = 0;
+    if (key->next_key != NULL) { nal_mode = 1; }
+
+    //Preparo el buffer de salida con hueco para el nal si es necesario
+    if (nal_mode == 1) {
+        tam_nal = key->next_key->size + 7; // 5 bytes del nal, 1 del modo del nal, 1 para decir el tam, mas la nueva clave
+        //printf("El tam del nal es: %d\n", tam_nal);
+        *out_buf = (byte*)malloc(size + tam_nal);
+        //Creo y relleno el NAL
+        nal = malloc(tam_nal);
+        for (int i = 0; i < 5; i++) {
+            nal[i] = nal_buffer[i];
+        }
+        nal[5] = 0x01;
+        nal[6] = (byte)key->next_key->size;
+        for (int i = 0; i < key->next_key->size; i++) {
+            nal[i + 7] = key->next_key->data[i];
+        }
+
+    }
+    else { *out_buf = (byte*)malloc(size); }
+    
     for (buf_pos; buf_pos < size; buf_pos++) {
-        /*if (nal_mode == 1) {
-            /*if (buf_pos >= 4) {  // Se puede cambiar para mirar cada n bytes
-                if (((byte*)in_buf)[buf_pos - 4] == 0x01 &&
-                    ((byte*)in_buf)[buf_pos - 3] == 0x45 &&
-                    ((byte*)in_buf)[buf_pos - 2] == 0xFC &&
-                    ((byte*)in_buf)[buf_pos - 1] == 0xC7 &&
-                    ((byte*)in_buf)[buf_pos] == 0xA2) {
-                    printf("Encontrada la cadena de bytes en la posición %zu\n", buf_pos - 4);
+        //printf("Empezando vuelta bucle %d, %d, %d\n", out_pos, in_pos, buf_pos);
+        if (buf_pos == pos_nal) {
+            if (nal_mode == 1) {
+                //introduzco la cadena del nal y la cifro
+                for (int i = 0; i < tam_nal; i++) {
+                    //printf("out_pos= %d\n", out_pos);
+                    memcpy(message, get_message(last_byte, key), 20);
+                    //Hago la transformacion lineal y actualizo el message
+                    message = lineal_transform(message);
+                    //Confusion
+                    byte resultado = confusion(message);
+                    (*out_buf)[out_pos] = ((nal)[i] ^ resultado) % 256;
+                    //(*out_buf)[out_pos] = (nal_buffer)[i];
+                    last_byte = (nal)[i];
+                    out_pos++;
+                    printf("(%02x) %c  ", (*out_buf)[out_pos-1], nal[i]);
                 }
+
+                //printf("Secuencia introducida\n");
+                //in_pos++;
+                //printf("\nAsi quedan las posiciones, in: %d, out:%d, buf:%d\n",in_pos,out_pos,buf_pos);
+                //Cambiar la clave
+                //printf("Clave previa al NAL %.*s\n", key->size, key->data);
+                key->size = key->next_key->size;
+                key->data = key->next_key->data;
+                //printf("Clave despues del NAL %.*s\n", key->size, key->data);
+                printf("\n");
+                continue;
             }
-            if (buf_pos == pos_nal) {
-                //out_buf = (byte*)realloc(out_buf, (size + 5) * sizeof(byte));
-                ((byte*)in_buf)[buf_pos] = 0x01;
-                ((byte*)in_buf)[buf_pos + 1] = 0x45;
-                ((byte*)in_buf)[buf_pos + 2] = 0xFC;
-                ((byte*)in_buf)[buf_pos + 3] = 0xC7;
-                ((byte*)in_buf)[buf_pos + 4] = 0xA2;
-                //buf_pos = buf_pos + 4;
-                printf("Secuencia introducida\n");
-            }
-        }*/
+        }
         //message = get_message(last_byte, key);
         memcpy(message, get_message(last_byte, key), 20);
         //Hago la transformacion lineal y actualizo el message
         message = lineal_transform(message);
         //Confusion
         byte resultado = confusion(message);
-        ((byte*)out_buf)[buf_pos] = (((byte*)in_buf)[buf_pos] ^ resultado) % 256;
-        last_byte = ((byte*)in_buf)[buf_pos];
+        //((byte*)out_buf)[out_pos] = (((byte*)in_buf)[in_pos] ^ resultado) % 256;
+        //(*out_buf)[out_pos] = (((byte*)in_buf)[in_pos] ^ resultado) % 256;
+        (*out_buf)[out_pos] = (((byte*)in_buf)[in_pos] ^ resultado) % 256;
+        last_byte = ((byte*)in_buf)[in_pos];
+        out_pos++;
+        in_pos++;
     }
     //printf("Buffer ciphered\n");
     free(message);
     
-    return 0;
+    return out_pos;
 }
 
-//int decipher(LPVOID out_buf, LPCVOID in_buf, DWORD size, size_t offset, struct KeyData* key) {
-int decipher(LPVOID out_buf, LPCVOID in_buf, DWORD size, struct KeyData* key, int nal_mode) {
+int decipher(byte** out_buf, byte* in_buf, DWORD size, struct KeyData* key) {
 
+    *out_buf = (byte*)malloc(size);
     byte* message = (byte*)malloc(20 * sizeof(byte));
     size_t buf_pos = 0; //posicion en el bufer, solo valida para escribir en el bufer, para cifrar se usa la posicion real en el fichero
     byte last_byte = 0xFF;
     byte pattern[5] = { 0x01, 0x45, 0xFC, 0xC7, 0xA2 };
+    size_t in_pos=0;
+    size_t out_pos=0;
+    int nal_mode = 0;
+    int tam_nal = 0;
+    byte* nal = NULL;
+
     for (buf_pos; buf_pos < size; buf_pos++) {
-        //message = get_message(last_byte, key);
         memcpy(message, get_message(last_byte, key), 20);
         //Hago la transformacion lineal y actualizo el message
         message = lineal_transform(message);
         //Confusion
         byte resultado = confusion(message);
-        ((byte*)out_buf)[buf_pos] = (((byte*)in_buf)[buf_pos] ^ resultado) % 256;
-        last_byte = ((byte*)out_buf)[buf_pos];
-        //Añado el calculo del nal
-        /*if (nal_mode == 1) {
-            if (buf_pos >= 4) {  // Asegúrate de que haya al menos 5 bytes en el buffer
-                if (((byte*)in_buf)[buf_pos - 4] == 0x01 &&
-                    ((byte*)in_buf)[buf_pos - 3] == 0x45 &&
-                    ((byte*)in_buf)[buf_pos - 2] == 0xFC &&
-                    ((byte*)in_buf)[buf_pos - 1] == 0xC7 &&
-                    ((byte*)in_buf)[buf_pos] == 0xA2) {
-                    printf("A.Encontrada la cadena de bytes en la posición %zu\n", buf_pos - 4);
+        //((byte*)out_buf)[buf_pos] = (((byte*)in_buf)[buf_pos] ^ resultado) % 256;
+        (*out_buf)[out_pos] = ((in_buf)[in_pos] ^ resultado) % 256;
+        last_byte = (*out_buf)[out_pos];
+        //Añado el calculo del nal en modo cambio de clave
+        if (out_pos >= 5) {  // Asegúrate de que haya al menos 5 bytes en el buffer
+            if ((*out_buf)[out_pos - 5] == 0x01 &&
+                (*out_buf)[out_pos - 4] == 0x45 &&
+                (*out_buf)[out_pos - 3] == 0xFC &&
+                (*out_buf)[out_pos - 2] == 0xC7 &&
+                (*out_buf)[out_pos - 1] == 0xA2 &&
+                (*out_buf)[out_pos] == 0x01) {
+                printf("Outbuffer.Encontrada la cadena de bytes en la posición %zu\n", out_pos - 5);
+                out_pos = out_pos - 5; //TODO descomentar esto despues, es MUY importante
+                in_pos++;
+                //Descifrar el tam y la clave
+                int tam_new_key = 0;
+                memcpy(message, get_message(last_byte, key), 20);
+                message = lineal_transform(message);
+                resultado = confusion(message);
+                tam_new_key = (int)((in_buf)[in_pos] ^ resultado) % 256;
+                last_byte = tam_new_key;
+                in_pos++;
+                printf("El size de la nueva clave es %d\n", tam_new_key);
+                byte* new_key = malloc(tam_new_key);
+                for (int i = 0; i < tam_new_key; i++) {
+                    memcpy(message, get_message(last_byte, key), 20);
+                    message = lineal_transform(message);
+                    resultado = confusion(message);
+                    printf("(%02x) ", (in_buf)[in_pos]);
+                    new_key[i] = ((in_buf)[in_pos] ^ resultado) % 256;
+                    last_byte = new_key[i];
+                    printf("%c ", last_byte);
+                    in_pos++;
                 }
+                //Reemplazar clave y machacar el fichero de key
+                key->size = tam_new_key;
+                key->data = new_key;
+                FILE* key_file = fopen(key->keyfile, "w");
+                fwrite(new_key,1,tam_new_key,key_file);
+                fclose(key_file);
+                printf("\n");
+                continue;
             }
-            if (buf_pos >= 4) {  // Asegúrate de que haya al menos 5 bytes en el buffer
-                if (((byte*)out_buf)[buf_pos - 4] == 0x01 &&
-                    ((byte*)out_buf)[buf_pos - 3] == 0x45 &&
-                    ((byte*)out_buf)[buf_pos - 2] == 0xFC &&
-                    ((byte*)out_buf)[buf_pos - 1] == 0xC7 &&
-                    ((byte*)out_buf)[buf_pos] == 0xA2) {
-                    printf("B.Encontrada la cadena de bytes en la posición %zu\n", buf_pos - 4);
-                }
-            }
-        }*/
+        }
+        out_pos++;
+        in_pos++;
     }
 
     //printf("Buffer deciphered\n");
     free(message);
-    return 0;
+    return out_pos;
 }
 

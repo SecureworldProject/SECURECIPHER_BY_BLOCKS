@@ -91,6 +91,8 @@ int main(int argc, char* argv[]) {
     key->size = tam_clave;
     key->data = malloc(tam_clave);
     key->data = datos_clave;
+    key->next_key = NULL;
+    key->keyfile = argv[4];
     fclose(fichero_clave);
 
     //Trato el NAL
@@ -124,33 +126,34 @@ int main(int argc, char* argv[]) {
         //Preparar nombre y extension fichero salida
         char nombre_file_salida[255];
         snprintf(nombre_file_salida,tam_filename+tam_extension+4,"%s_c.%s",filename,extension);
-        byte* buffer_salida = malloc(tam_buffer_entrada);
+        byte* buffer_salida = NULL;
         //Cifrar
-        result = cipher(buffer_salida, buffer_entrada, tam_buffer_entrada, key, modo_nal);
-        if (result != 0) {
+        result = cipher(&buffer_salida, buffer_entrada, tam_buffer_entrada, key);
+        if (result < tam_buffer_entrada) {
             printf("Error de cifrado (error: %d)\n",GetLastError());
         }
         //Escribir fichero salida
-        
         FILE* fichero_salida = fopen(nombre_file_salida, "wb");
-        fwrite(buffer_salida, 1, tam_buffer_entrada, fichero_salida);
+        fwrite(buffer_salida, 1, result, fichero_salida);
         fclose(fichero_salida);
+        free(buffer_salida);
         printf("Cifrado completado, el nombre del fichero de salida es %s\n",nombre_file_salida);
     }
     else if (strcmp(modo, "-d") == 0) {
         //Preparar nombre y extension fichero salida
         char nombre_file_salida[255];
         snprintf(nombre_file_salida, tam_filename + tam_extension + 4, "%s_d.%s", filename, extension);
-        byte* buffer_salida = malloc(tam_buffer_entrada);
-        //Cifrar
-        result = decipher(buffer_salida, buffer_entrada, tam_buffer_entrada, key, modo_nal);
-        if (result != 0) {
+        byte* buffer_salida = NULL;
+        //Descifrar
+        result = decipher(&buffer_salida, buffer_entrada, tam_buffer_entrada, key);
+        /*if (result != 0) {
             printf("Error de descifrado (error: %d)\n", GetLastError());
-        }
+        }*/
         //Escribir fichero salida
         FILE* fichero_salida = fopen(nombre_file_salida, "wb");
-        fwrite(buffer_salida, 1, tam_buffer_entrada, fichero_salida);
+        fwrite(buffer_salida, 1, result, fichero_salida);
         fclose(fichero_salida);
+        free(buffer_salida);
         printf("Descifrado completado, el nombre del fichero de salida es %s\n", nombre_file_salida);
     }
     else {
