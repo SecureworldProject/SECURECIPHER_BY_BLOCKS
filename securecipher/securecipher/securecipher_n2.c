@@ -252,7 +252,7 @@ int cipher(byte** out_buf, byte* in_buf, DWORD size, struct KeyData* key) {
                     //(*out_buf)[out_pos] = (nal_buffer)[i];
                     last_byte = (nal)[i];
                     out_pos++;
-                    printf("(%02x) %c  ", (*out_buf)[out_pos-1], nal[i]);
+                    //printf("(%02x) %c  ", (*out_buf)[out_pos-1], nal[i]);
                 }
 
                 //printf("Secuencia introducida\n");
@@ -263,7 +263,7 @@ int cipher(byte** out_buf, byte* in_buf, DWORD size, struct KeyData* key) {
                 key->size = key->next_key->size;
                 key->data = key->next_key->data;
                 //printf("Clave despues del NAL %.*s\n", key->size, key->data);
-                printf("\n");
+                //printf("\n");
                 continue;
             }
         }
@@ -282,7 +282,7 @@ int cipher(byte** out_buf, byte* in_buf, DWORD size, struct KeyData* key) {
     }
     //printf("Buffer ciphered\n");
     free(message);
-    
+    printf("buf_pos %d, in_pos %d, out_pos %d\n",buf_pos,in_pos,out_pos);
     return out_pos;
 }
 
@@ -316,8 +316,8 @@ int decipher(byte** out_buf, byte* in_buf, DWORD size, struct KeyData* key) {
                 (*out_buf)[out_pos - 2] == 0xC7 &&
                 (*out_buf)[out_pos - 1] == 0xA2 &&
                 (*out_buf)[out_pos] == 0x01) {
-                printf("Outbuffer.Encontrada la cadena de bytes en la posición %zu\n", out_pos - 5);
-                out_pos = out_pos - 5; //TODO descomentar esto despues, es MUY importante
+                //printf("Outbuffer.Encontrada la cadena de bytes en la posición %zu\n", out_pos - 5);
+                out_pos = out_pos - 5; 
                 in_pos++;
                 //Descifrar el tam y la clave
                 int tam_new_key = 0;
@@ -327,16 +327,16 @@ int decipher(byte** out_buf, byte* in_buf, DWORD size, struct KeyData* key) {
                 tam_new_key = (int)((in_buf)[in_pos] ^ resultado) % 256;
                 last_byte = tam_new_key;
                 in_pos++;
-                printf("El size de la nueva clave es %d\n", tam_new_key);
+                //printf("El size de la nueva clave es %d\n", tam_new_key);
                 byte* new_key = malloc(tam_new_key);
                 for (int i = 0; i < tam_new_key; i++) {
                     memcpy(message, get_message(last_byte, key), 20);
                     message = lineal_transform(message);
                     resultado = confusion(message);
-                    printf("(%02x) ", (in_buf)[in_pos]);
+                    //printf("(%02x) ", (in_buf)[in_pos]);
                     new_key[i] = ((in_buf)[in_pos] ^ resultado) % 256;
                     last_byte = new_key[i];
-                    printf("%c ", last_byte);
+                    //printf("%c ", last_byte);
                     in_pos++;
                 }
                 //Reemplazar clave y machacar el fichero de key
@@ -345,7 +345,7 @@ int decipher(byte** out_buf, byte* in_buf, DWORD size, struct KeyData* key) {
                 FILE* key_file = fopen(key->keyfile, "w");
                 fwrite(new_key,1,tam_new_key,key_file);
                 fclose(key_file);
-                printf("\n");
+                //printf("\n");
                 continue;
             }
         }
@@ -355,6 +355,7 @@ int decipher(byte** out_buf, byte* in_buf, DWORD size, struct KeyData* key) {
 
     //printf("Buffer deciphered\n");
     free(message);
+    printf("buf_pos %d, in_pos %d, out_pos %d\n", buf_pos, in_pos, out_pos);
     return out_pos;
 }
 
