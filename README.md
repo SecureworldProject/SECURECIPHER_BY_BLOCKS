@@ -1,7 +1,7 @@
 # SECURECIPHER_BY_BLOCKS
 Adaptación de securecipher para que trabaje con bloques de datos en un escenario de comparticion de video
 
-Hay dos proyectos en el repositorio:
+Hay tres proyectos en el repositorio:
 1. Securecipher_N: Adaptacion de la libreria dinámica original para que trabaje con bloques
 2. Cipher_by_block_validator: Para validar este nuevo cifrador (similar al dll validator del proyecto, pero con dos opciones para trabajar con bloques de distinto tamaño)
 3. securecipher: Programa para uso regular, permite cifrar y descifrar ficheros. **Este es el que se usa en la colaboracion**
@@ -12,13 +12,15 @@ Hay dos proyectos en el repositorio:
 ## Programa securecipher
 Uso:
 
-securecipher.exe <-c|-d> <fichero_entrada.extension> <-k> <fichero_clave>
+securecipher.exe <-c|-d> <fichero_entrada.extension> <-k> <fichero_clave> <-N> <fichero_clave_nuevo>
 
 Donde:
 * <-c|-d>: indica el modo de operacion, cifrar o descifrar
 * <fichero_entrada.extension>: El fichero que se quiere cifrar o descifrar, es importante incluir la extension del mismo
 * <-k>: indica que el siguiente fichero es el fichero de clave
 * <fichero_clave>: Un fichero que contiene la clave
+* <-N>: Indica el modo del NAL, por ahora cambio de clave
+* <fichero_clave_nuevo>: Indica el fichero de la clave nueva que se usará
   
 Salida:
 * Si el modo es cifrar: fichero_entrada_c.extension (el fichero cifrado)
@@ -26,17 +28,37 @@ Salida:
 
 Donde poner los ficheros:
 * Los ficheros que uses deben estar en la misma ubicacion que el ejecutable, por defecto en *securecipher/x64/Release*
-* Hay 3 ficheros para probar, uno de calve, otro de video y otro de texto.
+* Hay ficheros para probar, de clave, de video y de texto.
 * Además hay una carpeta que se llama *Ficheros para probar* que contiene mas ficheros de clave, de video y de texto
+
+Ejemplo de uso (**Acordado en reunion 11-10-2023**):
+cifrador -c <filename.kkk> -k <keyfile> -N <newkeyfile>: genera segmento cifrado con NAL de cambio de clave y clave
+cifrador -d <filename.kkk> -k <keyfile>: genera segmento descifrado  usando keyfile y si hay NAL de cambio de clave , se sobreescribe la keyfile
+
+Lado “server”
+cifrador -c segment1.mp4 -k key1
+cifrador -c segment2.mp4 -k key1 -N key2
+cifrador -c segment3.mp4 -k key2
+Lado “cliente”
+cifrador -d segment1.mp4 -k key	// Key contiene key1
+cifrador -d segment2.mp4 -k key	// Se sobreescribe key con key2
+cifrador -d segment3.mp4 -k key	// Key ya contiene key2
+
+![Ejemplo uso](ejemplo_uso.PNG)
 
 ## Cambios en el cifrado
 * Es un cifrador de flujo, que trata cada bloque de forma independiente y de manera conjunta, ya que el escenario de uso es distinto que el de Securemirror (trabajar con un sistema de ficheros en tiempo real)
 * Cambios en el api de cifrado: Al tratar con bloques enteros, ya no se usa el parametro offset que era necesario en el escenario de Securemirror, ya que ahora las llamadas son para cifrar bloques enteros y no trozos de ficheros desordenados.
   ```python
-  cipher(LPVOID out_buf, LPCVOID in_buf, DWORD size, struct KeyData* key);
-  decipher(LPVOID out_buf, LPCVOID in_buf, DWORD size, struct KeyData* key);
-  #La funcion init sigue igual
-  init(struct Cipher* cipher_data_param);
+  int cipher(byte** out_buf, byte* in_buf, DWORD size, struct KeyData* key);
+  int decipher(byte** out_buf, byte* in_buf, DWORD size, struct KeyData* key);
+  #Donde el struct de keydata es como sigue:
+  struct KeyData {
+	byte* data;
+	int size;
+	struct KeyData* next_key;
+	char* keyfile;
+  };
   ```
 * Se cambian dos requisitos:
   * Ya no es necesaria la posición: Te mandan un bloque entero de principio a fin, no tienes que conservar la posicion en un fragmento aleatorio de un fichero mas grande, como si ocurre en el escenario de Securemirror
@@ -63,6 +85,7 @@ El proyecto CIPHER_BY_BLOCK_VALIDATOR contiene el codigo necesario para cargar u
 
 **Se recomienda compilar los proyectos en modo release/x64**
 ### Cipher_by_block_validator
+**Ya no es la mejor opcion para probar el cifrador, porque usa una api distinta, para hacer pruebas se recomienda el proyecto securecipher
 ![menu_val](MenuValidador.png)
 
 Es el método mas sencillo para probar un cifrador de este tipo. Funciona mediante menus interactivos y permite validar los requisitos de cifrado, la velocidad del mismo, y hacer una prueba con trozos de un fichero de distintos tamaños.
