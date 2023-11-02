@@ -153,7 +153,8 @@ int main(int argc, char* argv[]) {
         }*/
         //Escribir fichero salida
         FILE* fichero_salida = fopen(nombre_file_salida, "wb");
-        fwrite(buffer_salida, 1, result, fichero_salida);
+        //fwrite(buffer_salida, 1, result, fichero_salida);
+        printf("Escribo estos bytes: %d\n",fwrite(buffer_salida, 1, result, fichero_salida));
         fclose(fichero_salida);
         free(buffer_salida);
         printf("Descifrado completado, el nombre del fichero de salida es %s y ocupa %d bytes\n", nombre_file_salida,result);

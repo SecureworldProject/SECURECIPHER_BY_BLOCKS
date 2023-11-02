@@ -345,12 +345,17 @@ int decipher(byte** out_buf, byte* in_buf, DWORD size, struct KeyData* key) {
                 FILE* key_file = fopen(key->keyfile, "w");
                 fwrite(new_key,1,tam_new_key,key_file);
                 fclose(key_file);
+                //realloc de outbuffer, que tiene que ser mas pequeño
                 //printf("\n");
+                //realloc(*out_buf,size-tam_nal);
+                tam_nal = tam_new_key + 7;
+                buf_pos = buf_pos + tam_new_key;
                 continue;
             }
         }
         out_pos++;
         in_pos++;
+        //if (out_pos > size - tam_nal) { printf("rompo\n"); break; }
     }
 
     //printf("Buffer deciphered\n");
