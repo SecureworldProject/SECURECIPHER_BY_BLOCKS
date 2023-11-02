@@ -32,17 +32,21 @@ Donde poner los ficheros:
 * Además hay una carpeta que se llama *Ficheros para probar* que contiene mas ficheros de clave, de video y de texto
 
 Ejemplo de uso (**Acordado en reunion 11-10-2023**):
-cifrador -c <filename.kkk> -k <keyfile> -N <newkeyfile>: genera segmento cifrado con NAL de cambio de clave y clave
-cifrador -d <filename.kkk> -k <keyfile>: genera segmento descifrado  usando keyfile y si hay NAL de cambio de clave , se sobreescribe la keyfile
 
-Lado “server”
-cifrador -c segment1.mp4 -k key1
-cifrador -c segment2.mp4 -k key1 -N key2
-cifrador -c segment3.mp4 -k key2
+cifrador -c <filename.kkk> -k <keyfile> -N <newkeyfile>: genera segmento cifrado con NAL de cambio de clave y clave  
+cifrador -d <filename.kkk> -k <keyfile>: genera segmento descifrado  usando keyfile y si hay NAL de cambio de clave , se sobreescribe la keyfile  
+
+Lado “server”  
+
+cifrador -c segment1.mp4 -k key1  
+cifrador -c segment2.mp4 -k key1 -N key2  
+cifrador -c segment3.mp4 -k key2  
+
 Lado “cliente”
-cifrador -d segment1.mp4 -k key	// Key contiene key1
-cifrador -d segment2.mp4 -k key	// Se sobreescribe key con key2
-cifrador -d segment3.mp4 -k key	// Key ya contiene key2
+
+cifrador -d segment1.mp4 -k key	// Key contiene key1  
+cifrador -d segment2.mp4 -k key	// Se sobreescribe key con key2  
+cifrador -d segment3.mp4 -k key	// Key ya contiene key2  
 
 ![Ejemplo uso](ejemplo_uso.PNG)
 
