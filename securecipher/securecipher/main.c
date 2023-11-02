@@ -62,7 +62,7 @@ int main(int argc, char* argv[]) {
     }
     //Guardo el buffer para cifrar/descifrar
     int tam_buffer_entrada = get_file_size(fichero_entrada);
-    printf("El fichero de entrada mide %d bytes\n",tam_buffer_entrada);
+    printf("El fichero de entrada %s mide %d bytes\n",argv[2],tam_buffer_entrada);
     char* buffer_entrada;// = malloc(tam_buffer_entrada);
     buffer_entrada = inputFile(fichero_entrada, 1);
     //Separo nombre y extension, y guardo ambos para luego escribir los ficheros de salida
@@ -131,15 +131,12 @@ int main(int argc, char* argv[]) {
         byte* buffer_salida = NULL;
         //Cifrar
         result = cipher(&buffer_salida, buffer_entrada, tam_buffer_entrada, key);
-        if (result < tam_buffer_entrada) {
-            printf("Error de cifrado (error: %d)\n",GetLastError());
-        }
         //Escribir fichero salida
         FILE* fichero_salida = fopen(nombre_file_salida, "wb");
         fwrite(buffer_salida, 1, result, fichero_salida);
         fclose(fichero_salida);
         free(buffer_salida);
-        printf("Cifrado completado, el nombre del fichero de salida es %s y ocupa %d bytes\n",nombre_file_salida, result);
+        printf("- Cifrado completado, el nombre del fichero de salida es %s y ocupa %d bytes\n",nombre_file_salida, result);
     }
     else if (strcmp(modo, "-d") == 0) {
         //Preparar nombre y extension fichero salida
@@ -148,16 +145,12 @@ int main(int argc, char* argv[]) {
         byte* buffer_salida = NULL;
         //Descifrar
         result = decipher(&buffer_salida, buffer_entrada, tam_buffer_entrada, key);
-        /*if (result != 0) {
-            printf("Error de descifrado (error: %d)\n", GetLastError());
-        }*/
         //Escribir fichero salida
         FILE* fichero_salida = fopen(nombre_file_salida, "wb");
-        //fwrite(buffer_salida, 1, result, fichero_salida);
-        printf("Escribo estos bytes: %d\n",fwrite(buffer_salida, 1, result, fichero_salida));
+        fwrite(buffer_salida, 1, result, fichero_salida);
         fclose(fichero_salida);
         free(buffer_salida);
-        printf("Descifrado completado, el nombre del fichero de salida es %s y ocupa %d bytes\n", nombre_file_salida,result);
+        printf("- Descifrado completado, el nombre del fichero de salida es %s y ocupa %d bytes\n", nombre_file_salida,result);
     }
     else {
         fprintf(stderr, "Modo no reconocido: %s\n", modo);
