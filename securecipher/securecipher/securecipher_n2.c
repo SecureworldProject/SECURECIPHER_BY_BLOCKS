@@ -217,6 +217,7 @@ int cipher(byte** out_buf, byte* in_buf, DWORD size, struct KeyData* key) {
     byte* nal = NULL;
     int nal_mode = 0;
     if (key->next_key != NULL) { nal_mode = 1; } //Si hay dos claves, estas en modo nal
+    byte byte_cero = 0x00; //Para incluir despues del nal natural
 
     //Preparo el buffer de salida con hueco para el nal si es necesario
     if (nal_mode == 1) {
@@ -237,6 +238,24 @@ int cipher(byte** out_buf, byte* in_buf, DWORD size, struct KeyData* key) {
     else { *out_buf = (byte*)malloc(size); }
     
     for (buf_pos; buf_pos < size; buf_pos++) {
+        //Deteccion de nals naturales
+        if (out_pos >= 4) {
+            if ((in_buf)[out_pos - 4] == 0x01 &&
+                (in_buf)[out_pos - 3] == 0x45 &&
+                (in_buf)[out_pos - 2] == 0xFC &&
+                (in_buf)[out_pos - 1] == 0xC7 &&
+                (in_buf)[out_pos] == 0xA2) {
+                printf("Encontrada la secuencia en pos: %d, meto el extra y termino en %d\n",out_pos-4,out_pos+1);
+                //Tengo que poner a continuacion un 0x00 y lo cifro
+                memcpy(message, get_message(last_byte, key), 20);
+                message = lineal_transform(message);
+                byte resultado = confusion(message);
+                (*out_buf)[out_pos+1] = byte_cero;//(byte_cero ^ resultado) % 256;
+                last_byte = byte_cero;
+                out_pos=out_pos+2;
+                continue;
+            }
+        }
         if (buf_pos == pos_nal) {
             if (nal_mode == 1) {
                 //introduzco la cadena del nal y la cifro
