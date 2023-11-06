@@ -218,6 +218,7 @@ int cipher(byte** out_buf, byte* in_buf, DWORD size, struct KeyData* key) {
     int nal_mode = 0;
     if (key->next_key != NULL) { nal_mode = 1; } //Si hay dos claves, estas en modo nal
     byte byte_cero = 0x00; //Para incluir despues del nal natural
+    int nal_naturales = 0;
 
     //Preparo el buffer de salida con hueco para el nal si es necesario
     if (nal_mode == 1) {
@@ -239,20 +240,47 @@ int cipher(byte** out_buf, byte* in_buf, DWORD size, struct KeyData* key) {
     
     for (buf_pos; buf_pos < size; buf_pos++) {
         //Deteccion de nals naturales
-        if (out_pos >= 4) {
+        /*if (out_pos >= 4) {
             if ((in_buf)[out_pos - 4] == 0x01 &&
                 (in_buf)[out_pos - 3] == 0x45 &&
                 (in_buf)[out_pos - 2] == 0xFC &&
                 (in_buf)[out_pos - 1] == 0xC7 &&
-                (in_buf)[out_pos] == 0xA2) {
-                printf("Encontrada la secuencia en pos: %d, meto el extra y termino en %d\n",out_pos-4,out_pos+1);
+                (in_buf)[out_pos] == 0xA2) {*/
+        if (in_pos >= 4) {
+            if ((in_buf)[in_pos - 4] == 0x01 &&
+                (in_buf)[in_pos - 3] == 0x45 &&
+                (in_buf)[in_pos - 2] == 0xFC &&
+                (in_buf)[in_pos - 1] == 0xC7 &&
+                (in_buf)[in_pos] == 0xA2) {
+                printf("Encontrada la secuencia en pos: %d, meto el extra y termino en %d\n", in_pos -4, in_pos +1);
+                printf("    buf pos= %d out_pos=%d in_pos=%d\n", buf_pos, out_pos, in_pos);
+                printf("    Last byte actual: %02x\n", last_byte);
+                //Cifro el actual el 0xA2
+                memcpy(message, get_message(last_byte, key), 20);
+                message = lineal_transform(message);
+                resultado = confusion(message);
+                //(*out_buf)[out_pos] = (in_buf)[out_pos];
+                (*out_buf)[out_pos] = ((in_buf)[in_pos] ^ resultado) % 256;
+                last_byte = (in_buf)[in_pos];
+                printf("    Cifro el 0xA2 en out_pos: %d, in_pos: %d\n",out_pos,in_pos);
+                printf("        ultimo byte cifrado: %02x y last_byte: %02x\n", (*out_buf)[out_pos],last_byte);
+                out_pos++;
+                //in_pos++;
+                printf("        actualizo posiciones out_pos: %d, in_pos: %2d\n",out_pos,in_pos);
                 //Tengo que poner a continuacion un 0x00 y lo cifro
                 memcpy(message, get_message(last_byte, key), 20);
                 message = lineal_transform(message);
-                byte resultado = confusion(message);
-                (*out_buf)[out_pos+1] = byte_cero;//(byte_cero ^ resultado) % 256;
+                resultado = confusion(message);
+                //(*out_buf)[out_pos] = byte_cero;
+                (*out_buf)[out_pos] = (byte_cero ^ resultado) % 256;
+                printf("    Cifro el 0x00 en out_pos: %d, in_pos: %d\n", out_pos, in_pos);
+                printf("        byte cero cifrado: %02x\n", (*out_buf)[out_pos]);                
                 last_byte = byte_cero;
-                out_pos=out_pos+2;
+                out_pos++;
+                in_pos++;//in_pos estaba en al ultimo bit del nal natural, se aumenta para dejarlo en el siguiente
+                //nal_naturales++;
+                //in_pos = in_pos + nal_naturales;
+                printf("    actualizo posiciones out_pos: %d, in_pos: %2d\n", out_pos, in_pos);
                 continue;
             }
         }
@@ -303,9 +331,13 @@ int decipher(byte** out_buf, byte* in_buf, DWORD size, struct KeyData* key) {
     int nal_mode = 0;
     int tam_nal = 0;
     byte* nal = NULL;
+    int marca_debug = 0;
 
     //Bucle de descifrado
     for (buf_pos; buf_pos < size; buf_pos++) {
+        if (marca_debug == 1) {
+            printf("Antes de cifrar last_byte=%02x\n",last_byte);
+        }
         memcpy(message, get_message(last_byte, key), 20);
         //Hago la transformacion lineal y actualizo el message
         message = lineal_transform(message);
@@ -313,6 +345,11 @@ int decipher(byte** out_buf, byte* in_buf, DWORD size, struct KeyData* key) {
         byte resultado = confusion(message);
         (*out_buf)[out_pos] = ((in_buf)[in_pos] ^ resultado) % 256;
         last_byte = (*out_buf)[out_pos];
+        if (marca_debug == 1) {
+            printf("Posiciones: out=%d, in=%d, buf=%d last_byte=%02x\n", out_pos, in_pos, buf_pos, last_byte);
+            printf("byte original cifrado es: %02x en %d y last_byte=%02x\n", (in_buf)[in_pos],in_pos,  (*out_buf)[out_pos] );
+            marca_debug = 0;
+        }
         //Añado el calculo del nal en modo cambio de clave
         if (out_pos >= 5) { 
             if ((*out_buf)[out_pos - 5] == 0x01 &&
@@ -350,6 +387,25 @@ int decipher(byte** out_buf, byte* in_buf, DWORD size, struct KeyData* key) {
                 tam_nal = tam_new_key + 7;
                 buf_pos = buf_pos + tam_new_key;
                 continue;
+            }
+            else {
+                if ((*out_buf)[out_pos - 5] == 0x01 &&
+                    (*out_buf)[out_pos - 4] == 0x45 &&
+                    (*out_buf)[out_pos - 3] == 0xFC &&
+                    (*out_buf)[out_pos - 2] == 0xC7 &&
+                    (*out_buf)[out_pos - 1] == 0xA2 &&
+                    (*out_buf)[out_pos] == 0x00) {
+                    printf("Encontrado el nal natural\n");
+                    //printf("Byte actual: %02x en la out_pos %d in_pos %d, buf_pos %d\n", (*out_buf)[out_pos],out_pos,in_pos,buf_pos);
+                    //Obviar el ultimo byte
+                    //buf_pos--;
+                    //out_pos=out_pos-2;//solo si no hago continue
+                    //out_pos--;
+                    in_pos++;
+                    //printf("Actualizo posiciones out_pos %d in_pos %d, buf_pos %d\n", out_pos, in_pos, buf_pos);
+                    marca_debug = 1;
+                    continue;
+                }
             }
         }
         out_pos++;
