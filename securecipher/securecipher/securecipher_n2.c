@@ -332,6 +332,7 @@ int decipher(byte** out_buf, byte* in_buf, DWORD size, struct KeyData* key) {
     int tam_nal = 0;
     byte* nal = NULL;
     int marca_debug = 0;
+    int last_nal_begin = -1;
 
     //Bucle de descifrado
     for (buf_pos; buf_pos < size; buf_pos++) {
@@ -394,8 +395,9 @@ int decipher(byte** out_buf, byte* in_buf, DWORD size, struct KeyData* key) {
                     (*out_buf)[out_pos - 3] == 0xFC &&
                     (*out_buf)[out_pos - 2] == 0xC7 &&
                     (*out_buf)[out_pos - 1] == 0xA2 &&
-                    (*out_buf)[out_pos] == 0x00) {
+                    (*out_buf)[out_pos] == 0x00 && (last_nal_begin != out_pos-5)) {
                     printf("Encontrado el nal natural\n");
+                    last_nal_begin = out_pos - 5;
                     //printf("Byte actual: %02x en la out_pos %d in_pos %d, buf_pos %d\n", (*out_buf)[out_pos],out_pos,in_pos,buf_pos);
                     //Obviar el ultimo byte
                     //buf_pos--;
