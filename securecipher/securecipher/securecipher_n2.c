@@ -259,7 +259,7 @@ int cipher(byte** out_buf, byte* in_buf, DWORD size, struct KeyData* key) {
                 memcpy(message, get_message(last_byte, key), 20);
                 message = lineal_transform(message);
                 resultado = confusion(message);
-                //(*out_buf)[out_pos] = (in_buf)[out_pos];
+                //(*out_buf)[out_pos] = (in_buf)[in_pos];
                 (*out_buf)[out_pos] = ((in_buf)[in_pos] ^ resultado) % 256;
                 last_byte = (in_buf)[in_pos];
                 printf("    Cifro el 0xA2 en out_pos: %d, in_pos: %d\n",out_pos,in_pos);
@@ -337,7 +337,7 @@ int decipher(byte** out_buf, byte* in_buf, DWORD size, struct KeyData* key) {
     //Bucle de descifrado
     for (buf_pos; buf_pos < size; buf_pos++) {
         if (marca_debug == 1) {
-            printf("Antes de cifrar last_byte=%02x\n",last_byte);
+            printf("    Antes de cifrar last_byte=%02x\n",last_byte);
         }
         memcpy(message, get_message(last_byte, key), 20);
         //Hago la transformacion lineal y actualizo el message
@@ -347,8 +347,8 @@ int decipher(byte** out_buf, byte* in_buf, DWORD size, struct KeyData* key) {
         (*out_buf)[out_pos] = ((in_buf)[in_pos] ^ resultado) % 256;
         last_byte = (*out_buf)[out_pos];
         if (marca_debug == 1) {
-            printf("Posiciones: out=%d, in=%d, buf=%d last_byte=%02x\n", out_pos, in_pos, buf_pos, last_byte);
-            printf("byte original cifrado es: %02x en %d y last_byte=%02x\n", (in_buf)[in_pos],in_pos,  (*out_buf)[out_pos] );
+            printf("    Posiciones: out=%d, in=%d, buf=%d last_byte=%02x\n", out_pos, in_pos, buf_pos, last_byte);
+            printf("    byte original cifrado es: %02x en %d y last_byte=%02x\n", (in_buf)[in_pos],in_pos,  (*out_buf)[out_pos] );
             marca_debug = 0;
         }
         //Añado el calculo del nal en modo cambio de clave
@@ -358,7 +358,9 @@ int decipher(byte** out_buf, byte* in_buf, DWORD size, struct KeyData* key) {
                 (*out_buf)[out_pos - 3] == 0xFC &&
                 (*out_buf)[out_pos - 2] == 0xC7 &&
                 (*out_buf)[out_pos - 1] == 0xA2 &&
-                (*out_buf)[out_pos] == 0x01) {
+                (*out_buf)[out_pos] == 0x01 && (last_nal_begin != out_pos - 5)) {
+                printf("Encontrado el nal de clave en %d\n", out_pos - 5);
+                last_nal_begin = out_pos - 5;
                 out_pos = out_pos - 5; 
                 in_pos++;
                 //Descifrar la longitud de la clave
@@ -396,7 +398,7 @@ int decipher(byte** out_buf, byte* in_buf, DWORD size, struct KeyData* key) {
                     (*out_buf)[out_pos - 2] == 0xC7 &&
                     (*out_buf)[out_pos - 1] == 0xA2 &&
                     (*out_buf)[out_pos] == 0x00 && (last_nal_begin != out_pos-5)) {
-                    printf("Encontrado el nal natural\n");
+                    printf("Encontrado el nal natural en %d\n",out_pos-5);
                     last_nal_begin = out_pos - 5;
                     //printf("Byte actual: %02x en la out_pos %d in_pos %d, buf_pos %d\n", (*out_buf)[out_pos],out_pos,in_pos,buf_pos);
                     //Obviar el ultimo byte
