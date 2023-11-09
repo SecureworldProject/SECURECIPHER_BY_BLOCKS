@@ -222,7 +222,7 @@ int cipher(byte** out_buf, byte* in_buf, DWORD size, struct KeyData* key) {
     //Preparo el buffer de salida con hueco para el nal si es necesario
     if (nal_mode == 1) {
         tam_nal = key->next_key->size + 7; // 5 bytes del nal, 1 del modo del nal, 1 para decir el tam, mas la nueva clave
-        *out_buf = (byte*)malloc(size + tam_nal+ size/5);//falta size + size/5
+        *out_buf = (byte*)malloc(size + tam_nal+ size/5);
         //Creo y relleno el NAL
         nal = malloc(tam_nal);
         for (int i = 0; i < 5; i++) {
@@ -236,18 +236,8 @@ int cipher(byte** out_buf, byte* in_buf, DWORD size, struct KeyData* key) {
 
     }
     else { *out_buf = (byte*)malloc(size); }
-    
-    int marca = 0;
-    int veces = 0;
+   
     for (buf_pos; buf_pos < size; buf_pos++) {
-        if (buf_pos != in_pos) { veces++; }
-        if ((buf_pos != in_pos) && (marca == 0)) {
-            printf("buf_pos = %d y in_pos = %d, out_pos = %d, pos nal es: %d\n",buf_pos,
-                in_pos,
-                out_pos,
-                pos_nal);
-            marca = 1;
-        }
         //Deteccion de nals naturales
         if (in_pos >= 4) {
             if ((in_buf)[in_pos - 4] == 0x01 &&
@@ -276,7 +266,6 @@ int cipher(byte** out_buf, byte* in_buf, DWORD size, struct KeyData* key) {
         if (buf_pos == pos_nal) {
             if (nal_mode == 1) {
                 //introduzco la cadena del nal y la cifro
-                printf("tam nal = %d el fichero de salida deberia medir %d\n",tam_nal,size+tam_nal);
                 for (int i = 0; i < tam_nal; i++) {
                     memcpy(message, get_message(last_byte, key), 20);
                     //Hago la transformacion lineal y actualizo el message
@@ -286,13 +275,12 @@ int cipher(byte** out_buf, byte* in_buf, DWORD size, struct KeyData* key) {
                     (*out_buf)[out_pos] = ((nal)[i] ^ resultado) % 256;
                     //(*out_buf)[out_pos] = nal[i];//((nal)[i] ^ resultado) % 256;
                     last_byte = (nal)[i];
-                    printf("%d: %02x\n",i,(nal)[i]);
                     out_pos++;
                 }
                 //Cambiar la clave
                 key->size = key->next_key->size;
                 key->data = key->next_key->data;
-                buf_pos--;//TODO Entender, problema last_byte
+                buf_pos--;//En esta posicion no se ha hecho nada, se repite el buf pos
                 pos_nal = 0;
                 continue;
             }
@@ -310,12 +298,6 @@ int cipher(byte** out_buf, byte* in_buf, DWORD size, struct KeyData* key) {
         in_pos++;
     }
     free(message);
-    printf("Ultimos 4 bytes\n");
-    for (int i = 4; i > 0; i--) {
-        printf("    En out_pos:%d in_pos:%d => %02x(%02x) claro(cifrado)\n", out_pos-i, in_pos-i, ((byte*)in_buf)[in_pos-i], (*out_buf)[out_pos-i]);
-    }
-    printf("buf pos = %d\n",buf_pos);
-    printf("buf_pos e in_pos han sido distints %d veces\n",veces);
     return out_pos;
 }
 
@@ -363,7 +345,6 @@ int decipher(byte** out_buf, byte* in_buf, DWORD size, struct KeyData* key) {
                 //tam_new_key = (int)((in_buf)[in_pos]);//(int)((in_buf)[in_pos] ^ resultado) % 256;
                 last_byte = tam_new_key;
                 in_pos++;
-                printf("    La nueva clave mide %d\n", tam_new_key);
                 //Descifrar la clave
                 byte* new_key = malloc(tam_new_key);
                 for (int i = 0; i < tam_new_key; i++) {
@@ -382,7 +363,7 @@ int decipher(byte** out_buf, byte* in_buf, DWORD size, struct KeyData* key) {
                 fwrite(new_key,1,tam_new_key,key_file);
                 fclose(key_file);
                 tam_nal = tam_new_key + 7;
-                buf_pos = buf_pos + tam_new_key+1; //TODO Entender, problema last_byte
+                buf_pos = buf_pos + tam_new_key+1; //se avanza uno mas el buf pos
                 //buf_pos = buf_pos + tam_nal;
                 continue;
             }
@@ -403,11 +384,6 @@ int decipher(byte** out_buf, byte* in_buf, DWORD size, struct KeyData* key) {
         in_pos++;
     }
     free(message);
-    printf("Ultimos 4 bytes\n");
-    for (int i = 4; i > 0; i--) {
-        printf("    En out_pos:%d in_pos:%d => %02x(%02x) claro(cifrado)\n", out_pos - i, in_pos - i, (*out_buf)[out_pos - i], ((byte*)in_buf)[in_pos - i]);
-    }
-    printf("buf pos = %d\n", buf_pos);
     return out_pos;
 }
 
