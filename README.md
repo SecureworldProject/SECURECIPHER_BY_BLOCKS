@@ -16,13 +16,14 @@ En este escenario de cifrado cambian los requisitos, ya que no hay que diseñar 
 Al no tener el mecanismo de FRN, el cifrador va a depender de los bytes anteriores para cifrar, de esta forma se refuerza la seguridad al no contar con el FRN. Se evita el ataque por ficheros preparados, ya que al depender cada byte de los anteriores, cada fichero cifrado es muy distinto entre sí y un fichero de todo 0s no te proporciona información.
 
 Al trabajar con segmentos enteros de video, se pueden introducir códigos para mejorar las seguridad:
-*“Los nal son secuencias binarias prohibidas. Por ejemplo una secuencia concreta de bytes como "0-33-0-33-OP". Cuando se producen los primeros 4 bytes de forma natural, se debe hacer notar al player de algún modo, por ejemplo definiendo una operacion "0" que significa "esos 4 bytes eran naturales" y si OP es otro valor entonces se interpreta la operación y no se tienen en cuenta los 4 bytes "0-33-0-33".
+
+ “Los nal son secuencias binarias prohibidas. Por ejemplo una secuencia concreta de bytes como "0-33-0-33-OP". Cuando se producen los primeros 4 bytes de forma natural, se debe hacer notar al player de algún modo, por ejemplo definiendo una operacion "0" que significa "esos 4 bytes eran naturales" y si OP es otro valor entonces se interpreta la operación y no se tienen en cuenta los 4 bytes "0-33-0-33".
 
 En resumen, si aparece la secuencia prohibida de forma natural, se añade un byte extra para indicar que es una secuencia de datos. Y si dicho byte extra tiene un valor que no es cero, entonces los 4 bytes se tiran a la basura y se interpreta la operación que indique el byte extra. Ejemplos:
 
 0-33-0-33-0 : se traduce por 0-33-0-33
 
-0-33-0-33-23 : se ejecuta la operación 23 (por ejemplo cambio de clave de cifrado o cualquier otra cosa)”*
+0-33-0-33-23 : se ejecuta la operación 23 (por ejemplo cambio de clave de cifrado o cualquier otra cosa)”
 
 
 ## Programa securecipher
