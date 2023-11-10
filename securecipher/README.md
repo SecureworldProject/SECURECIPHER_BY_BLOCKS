@@ -7,7 +7,7 @@ Hay tres proyectos en el repositorio:
 3. securecipher: Programa para uso regular, permite cifrar y descifrar ficheros. **Este es el que se usa en la colaboracion**
 
 ## Escenario y propuesta cifrador
-![boceto](boceto2.png)
+![boceto](../boceto2.png)
 
 El objetivo de esta variante del cifrador es cifrar segmentos completos de video de entre 2 y 10 segundos que componen una película en un servicio de streaming.
 
@@ -65,7 +65,7 @@ cifrador -d segment1.mp4 -k key	// Key contiene key1
 cifrador -d segment2.mp4 -k key	// Se sobreescribe key con key2  
 cifrador -d segment3.mp4 -k key	// Key ya contiene key2  
 
-![Ejemplo uso](ejemplo_uso.PNG)
+![Ejemplo uso](../ejemplo_uso.PNG)
 
 ## Cambios en el cifrado
 * Es un cifrador de flujo, que trata cada bloque de forma independiente y de manera conjunta, ya que el escenario de uso es distinto que el de Securemirror (trabajar con un sistema de ficheros en tiempo real)
