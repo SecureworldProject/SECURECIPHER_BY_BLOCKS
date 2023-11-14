@@ -5,9 +5,10 @@
 #include <stdint.h>
 #include "securecipher_n2.h"
 
-typedef enum {
-Nada = 0,
-Clave = 1} Tipo_Nal;
+//Para medir tiempos
+clock_t start;
+clock_t end;
+float seconds;
 
 //Funciones auxiliares
 DWORD get_file_size(FILE* file){
@@ -68,11 +69,11 @@ int main(int argc, char* argv[]) {
     //Separo nombre y extension, y guardo ambos para luego escribir los ficheros de salida
     int tam_filename = strlen(argv[2]);
     const char* punto = strrchr(argv[2], '.'); 
-    char* extension[255];//Aunque nunca es tan larga, este es el tamaño maximo de una extension en windows
+    char extension[255];//Aunque nunca es tan larga, este es el tamaño maximo de una extension en windows
     strcpy(extension, punto + 1);
     int tam_extension = strlen(extension);
-    char* filename[255];
-    int final_filename = tam_filename - tam_extension - 1;
+    char filename[255];
+    int final_filename = tam_filename - tam_extension -1;
     tam_filename = final_filename;
     strncpy(filename, argv[2], final_filename);
     filename[final_filename] = '\0';
@@ -130,13 +131,17 @@ int main(int argc, char* argv[]) {
         snprintf(nombre_file_salida,tam_filename+tam_extension+4,"%s_c.%s",filename,extension);
         byte* buffer_salida = NULL;
         //Cifrar
+        start = clock();
         result = cipher(&buffer_salida, buffer_entrada, tam_buffer_entrada, key);
+        end = clock();
+        seconds = (float)(end - start) / CLOCKS_PER_SEC;
         //Escribir fichero salida
         FILE* fichero_salida = fopen(nombre_file_salida, "wb");
         fwrite(buffer_salida, 1, result, fichero_salida);
         fclose(fichero_salida);
         free(buffer_salida);
         printf("- Cifrado completado, el nombre del fichero de salida es %s y ocupa %d bytes\n",nombre_file_salida, result);
+        printf("- Tiempo: %.16f segundos\n",seconds);
     }
     else if (strcmp(modo, "-d") == 0) {
         //Preparar nombre y extension fichero salida
@@ -144,20 +149,23 @@ int main(int argc, char* argv[]) {
         snprintf(nombre_file_salida, tam_filename + tam_extension + 4, "%s_d.%s", filename, extension);
         byte* buffer_salida = NULL;
         //Descifrar
+        start = clock();
         result = decipher(&buffer_salida, buffer_entrada, tam_buffer_entrada, key);
+        end = clock();
+        seconds = (float)(end - start) / CLOCKS_PER_SEC;
         //Escribir fichero salida
         FILE* fichero_salida = fopen(nombre_file_salida, "wb");
         fwrite(buffer_salida, 1, result, fichero_salida);
         fclose(fichero_salida);
         free(buffer_salida);
         printf("- Descifrado completado, el nombre del fichero de salida es %s y ocupa %d bytes\n", nombre_file_salida,result);
+        printf("- Tiempo: %.16f segundos\n", seconds);
     }
     else {
         fprintf(stderr, "Modo no reconocido: %s\n", modo);
         fclose(fichero_entrada);
         return 1;
     }
-    //frees
 
     return 0;
 }

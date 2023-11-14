@@ -1,5 +1,6 @@
 #include "securecipher_n2.h"
 
+
 byte* get_message(byte last_byte, struct KeyData* key) {
     byte message[20] = { 0 };
     //Preparar el message de 20 bytes por cada posicion, y los elementos por separado;
@@ -202,7 +203,8 @@ byte confusion(byte* message) {
     return resultado;
 }
 
-int cipher(byte** out_buf, byte* in_buf, DWORD size, struct KeyData* key) {    
+int cipher(byte** out_buf, byte* in_buf, DWORD size, struct KeyData* key) { 
+    //printf("a cifrar\n");
 
     //Variables de cifrado
     byte* message = (byte*)malloc(20 * sizeof(byte));
@@ -236,7 +238,7 @@ int cipher(byte** out_buf, byte* in_buf, DWORD size, struct KeyData* key) {
 
     }
     else { *out_buf = (byte*)malloc(size); }
-   
+    //printf("empieza el bucle\n");
     for (buf_pos; buf_pos < size; buf_pos++) {
         //Deteccion de nals naturales
         if (in_pos >= 4) {
@@ -245,6 +247,7 @@ int cipher(byte** out_buf, byte* in_buf, DWORD size, struct KeyData* key) {
                 (in_buf)[in_pos - 2] == 0xFC &&
                 (in_buf)[in_pos - 1] == 0xC7 &&
                 (in_buf)[in_pos] == 0xA2) {
+                //printf("nal\n");
                 //Cifro el actual el 0xA2
                 memcpy(message, get_message(last_byte, key), 20);
                 message = lineal_transform(message);
