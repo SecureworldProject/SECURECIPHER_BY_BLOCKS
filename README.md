@@ -2,9 +2,10 @@
 Adaptación de securecipher para que trabaje con bloques de datos en un escenario de comparticion de video
 
 Hay tres proyectos en el repositorio:
-1. Securecipher_N: Adaptacion de la libreria dinámica original para que trabaje con bloques
+1. securecipher: Programa para uso regular, permite cifrar y descifrar ficheros. **Este es el que se usa en la colaboracion** 
+2. Securecipher_N: Adaptacion de la libreria dinámica original para que trabaje con bloques, no se usa. (**Acordado en reunion 11-10-2023**)
 2. Cipher_by_block_validator: Para validar este nuevo cifrador (similar al dll validator del proyecto, pero con dos opciones para trabajar con bloques de distinto tamaño)
-3. securecipher: Programa para uso regular, permite cifrar y descifrar ficheros. **Este es el que se usa en la colaboracion**
+
 
 ## Escenario y propuesta cifrador
 ![boceto](boceto2.png)
